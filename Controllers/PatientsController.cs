@@ -20,11 +20,13 @@ public class PatientsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PatientDto>>> GetPatients([FromQuery] string? search)
     {
-        var query = _context.Patients.AsQueryable();
+        var query = _context.Patients
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{search}%";
+            var pattern = $"%{search.Trim()}%";
 
             query = query.Where(p =>
                 EF.Functions.Like(p.FirstName, pattern) ||
@@ -87,6 +89,10 @@ public class PatientsController : ControllerBase
         [FromRoute] string pesel,
         [FromBody] AssignBedRequestDto request)
     {
+        pesel = pesel.Trim();
+        request.BedType = request.BedType.Trim();
+        request.Ward = request.Ward.Trim();
+
         if (request.To.HasValue && request.To <= request.From)
         {
             return BadRequest(new
